@@ -1,17 +1,6 @@
-package round_g;
+package kickstart_2020.round_d;
 
-import static java.lang.String.format;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,11 +10,9 @@ import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * TC visible: 10 points
- * TC hidden: Time Limit Exceeded
- */
-public class BookReading {
+import static java.lang.String.format;
+
+public class RecordBreaker {
 
     private final static ByteArrayOutputStream INTERCEPTED_STREAM = new ByteArrayOutputStream();
     private final static PrintStream SYSTEM_OUT = System.out;
@@ -36,18 +23,19 @@ public class BookReading {
     public static void main(String[] args) {
 
         // edit the path
-        String testFile = "resources/homework/TC_%s.txt";
-        String testAns = "resources/homework/TC_%sa.txt";
+        String testFile = "resources/TC_%s.txt";
+        String testAns = "resources/TC_%sa.txt";
 
         // set 0 if version to submit
+        // TODO: in this task, all TCs put in a single file but tests below doesn't support this format yet
         int tcCount = 0;
         for (int testCase = 0; testCase < tcCount; testCase++) {
 
             enableTestFromFile(format(testFile, testCase));
             solve();
 
-            long[] ans = getResultsFromInterceptedStream();
-            Assert.assertEquals(ans, $.readFileAsLong(format(testAns, testCase)), testCase);
+            String[] ans = getResultsFromInterceptedStreamAsStringArray();
+            Assert.assertEquals(ans[0], $.readFile(format(testAns, testCase))[0], testCase);
 
             out.flush();
         }
@@ -68,26 +56,18 @@ public class BookReading {
         for (int tc = 1; tc <= t; tc++) {
             long sum = 0;
 
-            int n = in.nextInt(); // pages
-            int m = in.nextInt(); // torn out
-            int q = in.nextInt(); // readers
+            int n = in.nextInt(); // days
+            int[] visitors = in.readArray(n); // visitors on given day
 
-            int[] noPages = in.readArray(m);
-            int[] readers = in.readArray(q);
+            int max = -1;
 
-            int[] pages = new int[n + 1];
-
-            for (int i = 1; i <= n; i++) {
-                pages[i] = 1;
+            for (int i = 0; i < visitors.length - 1; i++) {
+                if (visitors[i] > max && visitors[i] > visitors[i + 1]) {
+                    sum++;
+                }
+                max = Math.max(max, visitors[i]);
             }
-
-            for (int j = 0; j < m; j++) {
-                pages[noPages[j]] = 0;
-            }
-
-            for (int k = 0; k < q; k++) {
-                sum += count(readers[k], pages);
-            }
+            if (visitors[n - 1] > max) sum++;
 
             String result = "Case #%s: %d";
             out.println(String.format(result, tc, sum));
@@ -97,16 +77,6 @@ public class BookReading {
         out.close();
     }
 
-    private static long count(int factor, int[] pages) {
-        long count = 0;
-        int page = factor;
-
-        while (page < pages.length) {
-            count += pages[page];
-            page += factor;
-        }
-        return count;
-    }
 
 
     /**
@@ -132,7 +102,7 @@ public class BookReading {
      * This is needed if we want to print something to the console between the tests.
      * @return arrays of longs with results
      */
-    private static long[] getResultsFromInterceptedStream() {
+    private static long[] getResultsFromInterceptedStreamAsLingArray() {
         out.flush();
         String[] stringArray = INTERCEPTED_STREAM.toString().split("\r\n");
 
@@ -141,6 +111,17 @@ public class BookReading {
         out = new PrintWriter(System.out);
 
         return $.arrayStringToLong(stringArray);
+    }
+
+    private static String[] getResultsFromInterceptedStreamAsStringArray() {
+        out.flush();
+        String[] stringArray = INTERCEPTED_STREAM.toString().split("\r\n");
+
+        INTERCEPTED_STREAM.reset();
+        System.setOut(SYSTEM_OUT);
+        out = new PrintWriter(System.out);
+
+        return stringArray;
     }
 
     /**
@@ -297,12 +278,20 @@ public class BookReading {
      */
     private static class Assert {
 
+        static void assertEquals(String actual, String expected, int index) {
+            actual = actual.replace("\n", "");
+
+            if (!actual.equals(expected)) {
+                throw new RuntimeException("\n" + actual + " != \n"  + expected);
+            }
+            System.out.println("Test passed " + index);
+        }
+
         static void assertEquals(int actual, int expected, int index) {
             if (actual != expected) {
                 throw new RuntimeException("\n" + actual + " != "  + expected);
             }
             System.out.println("Test passed " + index);
-
         }
 
         static void assertEquals(long actual, long expected, int index) {
@@ -316,7 +305,7 @@ public class BookReading {
         static void assertEquals(int[] actual, int[] expected, int index) {
             if (!Arrays.equals(actual, expected)) {
                 throw new RuntimeException("\n" + Arrays.toString(actual)
-                    + "\n" + Arrays.toString(expected));
+                        + "\n" + Arrays.toString(expected));
             }
             System.out.println("Test passed " + index);
 
@@ -325,7 +314,7 @@ public class BookReading {
         static void assertEquals(long[] actual, long[] expected, int index) {
             if (!Arrays.equals(actual, expected)) {
                 throw new RuntimeException("\n" + Arrays.toString(actual)
-                    + "\n" + Arrays.toString(expected));
+                        + "\n" + Arrays.toString(expected));
             }
             System.out.println("Test passed " + index);
         }
